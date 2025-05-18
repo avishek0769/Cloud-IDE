@@ -1,0 +1,18 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.foreign-cursor {
+    background-color: rgba(255, 0, 0, 0.952); /* Red semi-transparent */
+    border: 2px solid red;
+    animation: blink 0.5s infinite alternate;
+}
+
+@keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.3; }
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
