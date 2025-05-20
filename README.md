@@ -1,4 +1,4 @@
-# Cloud IDE - Real-time Collaborative Development Environment
+# Cloud IDE - Real-time Collaborative Programming Environment
 
 ## Overview
 A full-stack web application providing an isolated cloud-based development environment with real-time collaboration features, allowing multiple users to code together seamlessly.
