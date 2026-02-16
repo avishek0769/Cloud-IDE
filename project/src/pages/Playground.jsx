@@ -51,9 +51,21 @@ function Playground() {
 
     const handleQuit = useCallback(() => {
         setLoading(true)
-        setTimeout(() => {
-            navigate("/dashboard")
-        }, 2000);
+        fetch(`${domain}/projects/stopContainer/${containerId}`, {
+            headers: {
+                "Content-type": "application/json"
+            },
+            credentials: "include"
+        })
+        .then(res => {
+            if (res.status == 444) {
+                navigate("/login")
+                return
+            }
+            setTimeout(() => {
+                navigate("/dashboard")
+            }, 2000);
+        })
     }, [domain, containerId])
 
     useEffect(() => {
@@ -78,7 +90,8 @@ function Playground() {
         setIsSharedDropDownHidden(false)
         fetch(`${domain}/projects/generateSharableLink/${containerId}`, {
             headers: {
-                "Content-type": "application/json"
+                "Content-type": "application/json",
+                "Authorization": currentUser ? `Bearer ${currentUser.accessToken}` : ""
             },
             credentials: "include"
         })
@@ -262,6 +275,13 @@ function Playground() {
             }
         }
     }, [socket, isSocketConnected])
+
+    // useEffect(() => {
+    //     if (!currentUser) {
+    //         navigate("/login")
+    //     }
+    // }, [currentUser])
+    
 
     return (
         <div className='flex h-[100vh] w-[100vw] bg-black'>

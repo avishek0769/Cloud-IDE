@@ -8,6 +8,7 @@ import Docker from "dockerode"
 import findOpenPort from "find-open-port"
 import ngrok from "@ngrok/ngrok"
 import { v4 as uuidv4 } from "uuid"
+import { CLIENT_URL } from "../../constants.js";
 
 const docker = new Docker()
 
@@ -24,7 +25,7 @@ const exposePort = async (project) => {
 
 const createNewProject = asyncHandler(async (req, res) => {
     const { name, description, language } = req.body;
-    
+
     const port = await findOpenPort()
     console.log(port)
     const container = await docker.createContainer({
@@ -33,7 +34,7 @@ const createNewProject = asyncHandler(async (req, res) => {
         Env: [`ENV_TYPE=${language}`],
         HostConfig: {
             PortBindings: {
-                "3000/tcp": [{HostPort: port.toString()}]
+                "3000/tcp": [{ HostPort: port.toString() }]
             }
         },
         ExposedPorts: {
@@ -60,7 +61,7 @@ const createNewProject = asyncHandler(async (req, res) => {
         { $push: { projects: project._id } },
         { new: true }
     )
-    
+
     res.status(200).json(new ApiResponse(200, project, "New Project created"))
 })
 
@@ -69,7 +70,7 @@ const getProjects = asyncHandler(async (req, res) => {
     const userId = req.user._id
     let filteredProjects;
 
-    if(category == "your"){
+    if (category == "your") {
         filteredProjects = await User.aggregate([
             {
                 $match: { _id: new mongoose.Types.ObjectId(userId) }
@@ -103,33 +104,32 @@ const startContainer = asyncHandler(async (req, res) => {
         { new: true }
     )
 
-    if(token){
-        if(token == project.tokenOfProof){
+    if (token) {
+        if (token == project.tokenOfProof) {
             project.sharedTo.push(req.user._id)
             isOk = true
         }
         else throw new ApiError(474, "Token is invalid");
     }
     else {
-        if(project.owner != req.user._id) {
+        if (project.owner != req.user._id) {
             isOk = true
         }
         else throw new ApiError(475, "You are Unauthorised");
     }
-    if(isOk){
+    if (isOk) {
         const container = docker.getContainer(containerId)
         const data = await container.inspect()
-        if(!data.State.Running){
+        if (!data.State.Running) {
             await container.start()
             console.log(await exposePort(project))
         }
-        
-        container.logs({follow: true, stderr: true, stdout: true}, (err, stream) => {
-            if(err) throw new ApiError(501, err.message);
+
+        container.logs({ follow: true, stderr: true, stdout: true }, (err, stream) => {
+            if (err) throw new ApiError(501, err.message);
 
             const handleLogs = (chunk) => {
-                console.log(chunk.toString())
-                if(chunk.toString().includes("Docker Server running")){
+                if (chunk.toString().includes("Docker Server running")) {
                     res.status(200).json(new ApiResponse(200, project, "Container has started !"))
                     stream.removeListener("data", handleLogs)
                 }
@@ -144,15 +144,15 @@ const stopRunningContainers = asyncHandler(async (req, res) => {
     const projects = await Project.find({ owner: req.user._id })
 
     for (const project of projects) {
-        if(project.tokenOfProof) {
+        if (project.tokenOfProof) {
             const tunnelCheck = await fetch(`${project.instanceURL}/files`)
-            if(tunnelCheck.status != 404) {
+            if (tunnelCheck.status != 404) {
                 const tunnel = await ngrok.getListenerByUrl(project.instanceURL)
                 await tunnel.close()
                 const response = await fetch(`${project.instanceURL}/get-connected-sockets`)
                 const connectedSockets = await response.json()
-    
-                if(connectedSockets.length <= 1) {
+
+                if (connectedSockets.length <= 1) {
                     const container = docker.getContainer(project.containerId)
                     const containerInfo = await container.inspect()
                     if (containerInfo && containerInfo.State.Running) {
@@ -169,32 +169,55 @@ const stopContainer = asyncHandler(async (req, res) => {
     const { containerId } = req.params
 
     const project = await Project.findOne({ containerId })
-    const tunnel = await ngrok.getListenerByUrl(project.instanceURL)
-    await tunnel.close().catch(err => console.log("Tunnel Close error --> ", err))
 
-    const response = await fetch(`${project.instanceURL}/get-connected-sockets`)
+    const response = await fetch(
+        `${project.instanceURL}/get-connected-sockets`,
+        {
+            headers: {
+                "ngrok-skip-browser-warning": "true",
+                "Content-Type": "application/json",
+            },
+        }
+    )
+
+    if (!response.ok) {
+        throw new Error(`Tunnel fetch failed: ${response.status}`)
+    }
+
     const connectedSockets = await response.json()
-    
-    if(connectedSockets.length <= 1) {
+    console.log(connectedSockets)
+
+    if (Object.keys(connectedSockets).length <= 1) {
         const container = docker.getContainer(containerId)
         const containerInfo = await container.inspect()
-        if (!containerInfo || !containerInfo.State.Running) {
-            return res.status(400).json(new ApiResponse(400, {}, "Container is not running!"));
+
+        if (!containerInfo?.State?.Running) {
+            return res.status(400).json(
+                new ApiResponse(400, {}, "Container is not running!")
+            )
         }
-        await container.stop();
-        return res.status(400).json(new ApiResponse(400, {}, "Container stopped!"));
+
+        const tunnel = await ngrok.getListenerByUrl(project.instanceURL)
+        await tunnel.close()
+
+        container.stop()
+        return res
+            .status(200)
+            .json(new ApiResponse(200, {}, "Container stopped!"))
     }
-    res.status(200).json(new ApiResponse(200, {}, "People are working, didn't stop container"));
+
+    res.status(200).json(new ApiResponse(200, {}, "People are working, didn't stop container"))
 })
+
 
 const editMetaData = asyncHandler(async (req, res) => {
     const { projectId } = req.params
-    const { name, description, lastOpened} = req.body;
+    const { name, description, lastOpened } = req.body;
 
     let obj = {}
-    if(name) obj["name"] = name;
-    if(description) obj["description"] = description;
-    if(lastOpened) obj["lastOpened"] = lastOpened;
+    if (name) obj["name"] = name;
+    if (description) obj["description"] = description;
+    if (lastOpened) obj["lastOpened"] = lastOpened;
 
     const project = await Project.findByIdAndUpdate(
         projectId,
@@ -211,13 +234,13 @@ const deleteProject = asyncHandler(async (req, res) => {
     const tunnel = await ngrok.getListenerByUrl(project.instanceURL)
     await tunnel.close().catch(err => console.log("Tunnel Close error --> ", err))
 
-    if(project){
+    if (project) {
         const container = docker.getContainer(project.containerId)
         await container.remove()
     }
     else throw new ApiError(503, "Project doesn't exists")
 
-    res.status(200).json(new ApiResponse(200, {deleted: true}, "Project deleted successfully"))
+    res.status(200).json(new ApiResponse(200, { deleted: true }, "Project deleted successfully"))
 })
 
 const generateLink = asyncHandler(async (req, res) => {
@@ -226,30 +249,30 @@ const generateLink = asyncHandler(async (req, res) => {
     const project = await Project.findOne({ containerId })
 
     const response = await fetch(`${project.instanceURL}/files`)
-    if(response.status == 404){
+    if (response.status == 404) {
         await exposePort(project)
     }
 
     let token = project.tokenOfProof;
-    if(!token){
+    if (!token) {
         token = uuidv4()
         project.tokenOfProof = token;
     }
     await project.save()
 
     res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        { url: `https://z1v3k1h4-5173.inc1.devtunnels.ms/playground?containerId=${containerId}&token=${token}` },
-        `Port ${project.port} Exposed in the docker container`
-    ))
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            { url: `${CLIENT_URL}/playground?containerId=${containerId}&token=${token}` },
+            `Port ${project.port} Exposed in the docker container`
+        ))
 })
 
 const refreshInstanceUrl = asyncHandler(async (req, res) => {
     const { containerId } = req.params;
-    if(!containerId) throw new ApiError(402, "Container ID is absent !");
-    
+    if (!containerId) throw new ApiError(402, "Container ID is absent !");
+
     const project = await Project.findOne({ containerId });
     let url;
     const response = await fetch(project.instanceURL, {
@@ -259,7 +282,7 @@ const refreshInstanceUrl = asyncHandler(async (req, res) => {
         },
         credentials: "include"
     })
-    if(response.status == 404){
+    if (response.status == 404) {
         url = await exposePort(project)
     }
 

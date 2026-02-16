@@ -1,0 +1,49 @@
+FROM ubuntu:22.04 AS builder
+
+# Set a default value for the environment variable
+ARG ENV_TYPE=js
+
+# Install packages based on ENV_TYPE
+RUN apt update && apt install -y \
+    gcc \
+    g++ \
+    curl \
+    file \
+    findutils \
+    coreutils
+
+RUN apt install bash
+RUN ln -sf /bin/bash /bin/sh
+
+WORKDIR /docker
+
+COPY index.js index.js
+COPY package.json package.json
+
+RUN mkdir /user
+
+FROM node:24.4.0-slim
+
+WORKDIR /docker
+RUN apt update && apt install -y bash
+
+COPY --from=builder /docker .
+
+# Manually copy core compiler + runtime binaries
+COPY --from=builder /usr/bin/gcc /usr/bin/gcc
+COPY --from=builder /usr/bin/g++ /usr/bin/g++
+
+# Copy shared libraries these binaries depend on
+# Tip: use ldd /usr/bin/gcc | awk '{print $3}' to find required libs
+COPY --from=builder /lib /lib
+COPY --from=builder /lib64 /lib64
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /usr/lib64 /usr/lib64
+COPY --from=builder /usr/include /usr/include
+COPY --from=builder /etc /etc
+
+RUN npm install
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

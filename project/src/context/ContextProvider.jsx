@@ -1,11 +1,12 @@
 import React, { createContext, useEffect, useMemo, useState } from 'react'
+import { SERVER_URL } from '../../../constants'
 
 export const Context = createContext(null)
 
 function ContextProvider({ children }) {
     const [socket, setSocket] = useState("")
     const [currentUser, setCurrentUser] = useState(undefined)
-    const [domain, setDomain] = useState("https://z1v3k1h4-4000.inc1.devtunnels.ms/api/v1")
+    const [domain, setDomain] = useState(`${SERVER_URL}/api/v1`)
 
     useEffect(() => {
         const getCurrentUser = () => {
