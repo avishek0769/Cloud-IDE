@@ -1,4 +1,4 @@
-# Cloud IDE - Real-time Collaborative Programming Environment
+# Codium IDE - Real-time Collaborative Programming Environment
 
 ## Overview
 A full-stack web application providing an isolated cloud-based development environment with real-time collaboration features, allowing multiple users to code together seamlessly.
@@ -83,11 +83,11 @@ NGROK_AUTH_TOKEN=
 ```bash
 # Frontend
 cd client
-npm install
+pnpm install
 
 # Backend
 cd ../server
-npm install
+pnpm install
 ```
 
 4. **Build Docker Image**
@@ -100,11 +100,11 @@ docker build -t cloud-ide-env .
 ```bash
 # Start backend
 cd server
-npm run dev
+pnpm run dev
 
 # Start frontend (in new terminal)
 cd client
-npm run dev
+pnpm run dev
 ```
 
 ## Known Limitations
