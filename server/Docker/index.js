@@ -13,42 +13,34 @@ const child = spawn("/bin/bash", [], { // Change this for ubuntu
     stdio: ["pipe", "pipe", "pipe"]
 })
 
+const allowedOrigins = [
+    /localhost:\d+$/,
+    /\.devtunnels\.ms$/,
+    /\.ngrok-free\.app$/,
+    /\.ngrok\.io$/,
+];
+
+const corsOriginResolver = (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some(regex => regex.test(origin));
+    callback(null, isAllowed ? true : true); // open in dev
+};
+
+const corsOptions = {
+    origin: corsOriginResolver,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"]
+};
+
 const app = express()
 const server = http.createServer(app)
 const io = new Server(server, {
-    cors: {
-        origin: /\.devtunnels\.ms$/,
-        credentials: true,
-        methods: ["GET", "POST", "DELETE", "PATCH", "PUT"]
-    }
+    cors: corsOptions
 })
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, ngrok-skip-browser-warning");
-    res.header("Access-Control-Allow-Credentials", "true");
 
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-
-    next();
-});
-
-app.use(cors({
-    origin: /\.devtunnels\.ms$/,
-    credentials: true,
-    methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"]
-}));
-
-app.options("*", (req, res) => {
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, ngrok-skip-browser-warning");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.sendStatus(200);
-});
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 chokidar.watch("./user").on("all", (event, path) => {
     if (event == "add" || event == "addDir" || event == "unlink" || event == "unlinkDir") {

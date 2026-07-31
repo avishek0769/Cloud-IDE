@@ -32,12 +32,23 @@ export function Login() {
             credentials: "include"
         })
         .then(res => {
-            if(res.status > 399) showAlertFunc("Something went wrong, try again !");
-            else return res.json()
+            if(res.status > 399) {
+                showAlertFunc("Something went wrong, try again !");
+            } else {
+                return res.json()
+            }
         })
         .then(data => {
-            setCurrentUser(data.data)
-            navigate("/dashboard")
+            if (data) {
+                setCurrentUser(data.data)
+                const params = new URLSearchParams(window.location.search);
+                const redirect = params.get("redirect");
+                if (redirect) {
+                    navigate(redirect);
+                } else {
+                    navigate("/dashboard");
+                }
+            }
         })
     };
 
@@ -55,7 +66,7 @@ export function Login() {
                     </h2>
                     <p className="mt-2 text-sm text-gray-400">
                         Don't have an account?{' '}
-                        <Link to="/signup" className="font-medium text-blue-500 hover:text-blue-400">
+                        <Link to={`/signup${window.location.search}`} className="font-medium text-blue-500 hover:text-blue-400">
                             Sign up
                         </Link>
                     </p>

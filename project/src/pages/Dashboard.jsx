@@ -12,15 +12,24 @@ import { SyncLoader } from 'react-spinners';
 import NavTab from '../components/layout/NavTab';
 
 
+
 function Dashboard() {
   const [projects, setProjects] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
   const { domain, currentUser } = useContext(Context)
   const [activeTab, setActiveTab] = useState('your');
   const navigate = useNavigate()
+
+  const showAlertFunc = useCallback((msg) => {
+    setAlertMessage(msg);
+    setShowAlert(true);
+    setTimeout(() => setShowAlert(false), 3000);
+  }, []);
 
   useEffect(() => {
     if (currentUser == undefined) navigate("/")
@@ -66,10 +75,8 @@ function Dashboard() {
       credentials: "include"
     })
       .then(res => {
-        console.log(res.status)
         if (res.status > 399) {
-          console.log("Error Delete");
-          alert("Failed to delete project");
+          showAlertFunc("Failed to delete project. Please try again.");
         }
         else {
           setProjects(prevProjects => prevProjects.filter(elem => elem._id !== project._id))
@@ -77,7 +84,7 @@ function Dashboard() {
       })
       .catch(err => {
         console.error("Delete request failed:", err);
-        alert("Failed to delete project due to network error");
+        showAlertFunc("Network error. Could not delete project.");
       })
       .finally(() => {
         setIsDeleting("")
@@ -87,6 +94,7 @@ function Dashboard() {
   return (
     <>
       {loading && <LoadingScreen message={"It may take a while..."} />}
+      {showAlert && <AlertMessage message={alertMessage} />}
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-transparent min-h-[calc(100vh-64px)]">

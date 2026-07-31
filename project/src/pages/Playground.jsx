@@ -200,23 +200,29 @@ function Playground() {
             credentials: "include"
         })
         .then(res => {
-            if (res.status == 474) {
+            if (res.status == 444) {
+                showAlertFunc("Authentication required. Redirecting to login...");
+                setTimeout(() => {
+                    navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+                }, 1500);
+                return;
+            }
+            else if (res.status == 474) {
                 showAlertFunc("Token is invalid");
                 setLoading(false)
                 return
             }
             else if (res.status == 475) {
-                showAlertFunc("Authentication reqiured");
-                setLoading(false)
+                showAlertFunc("Authentication required. Redirecting to login...");
+                setTimeout(() => {
+                    navigate(`/login?redirect=${encodeURIComponent(window.location.search)}`);
+                }, 1500);
                 return
             }
             else if (res.status > 399) {
                 showAlertFunc("Unable to open project");
                 setLoading(false)
                 return
-            }
-            else if (res.status == 444) {
-                navigate("/login")
             }
             else {
                 return res.json()
@@ -232,7 +238,7 @@ function Playground() {
             showAlertFunc("Error: Refresh to try again");
             setLoading(false);
         });
-    }, [setContainerUrl, setLoading, showAlertFunc, domain])
+    }, [setContainerUrl, setLoading, showAlertFunc, domain, containerId, token, navigate])
 
     useEffect(() => {
         if (selectedFile) {

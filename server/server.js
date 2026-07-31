@@ -10,11 +10,28 @@ dotenv.config({
 })
 
 const app = express()
+
+const allowedOrigins = [
+    /localhost:\d+$/,
+    /\.devtunnels\.ms$/,
+    /\.ngrok-free\.app$/,
+    /\.ngrok\.io$/
+];
+
 app.use(cors({
-    origin: /\.devtunnels\.ms$/,
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed = allowedOrigins.some(regex => regex.test(origin));
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            // Fallback to allow any origin in development
+            callback(null, true);
+        }
+    },
     credentials: true,
     methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-    allowedHeaders: "Content-Type, Authorization"
+    allowedHeaders: "Content-Type, Authorization, ngrok-skip-browser-warning"
 }));
 
 app.options("*", cors());

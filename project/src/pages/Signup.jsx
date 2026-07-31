@@ -57,7 +57,13 @@ export function SignUp() {
             if(data){
                 console.log(data)
                 setCurrentUser(data.data)
-                navigate("/dashboard")
+                const params = new URLSearchParams(window.location.search);
+                const redirect = params.get("redirect");
+                if (redirect) {
+                    navigate(redirect);
+                } else {
+                    navigate("/dashboard");
+                }
             } 
         })
     }, [password, confirmPassword, username, fullname])
@@ -76,7 +82,7 @@ export function SignUp() {
                     </h2>
                     <p className="mt-2 text-sm text-gray-400">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-medium text-blue-500 hover:text-blue-400">
+                        <Link to={`/login${window.location.search}`} className="font-medium text-blue-500 hover:text-blue-400">
                             Sign in
                         </Link>
                     </p>

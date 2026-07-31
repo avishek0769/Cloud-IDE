@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const projectSchema = new Schema({
     owner: {
@@ -16,7 +16,7 @@ const projectSchema = new Schema({
     },
     language: {
         type: String,
-        enum: ['ts', 'js', 'py', 'c', 'cpp','java', 'go', 'rust'],
+        enum: ['ts', 'js', 'py', 'c', 'cpp', 'java', 'go', 'rust'],
         required: true,
     },
     instanceURL: {
@@ -36,7 +36,7 @@ const projectSchema = new Schema({
     },
     sharedTo: [{
         type: Schema.Types.ObjectId,
-        ref : "User"
+        ref: "User"
     }],
     tokenOfProof: {
         type: String,

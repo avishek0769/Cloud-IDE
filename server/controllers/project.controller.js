@@ -104,19 +104,31 @@ const startContainer = asyncHandler(async (req, res) => {
         { new: true }
     )
 
+    if (!project) {
+        throw new ApiError(404, "Project not found");
+    }
+
     if (token) {
-        if (token == project.tokenOfProof) {
-            project.sharedTo.push(req.user._id)
-            isOk = true
+        if (token === project.tokenOfProof) {
+            const isOwner = project.owner.equals(req.user._id);
+            const isAlreadyShared = project.sharedTo.some(id => id.equals(req.user._id));
+            if (!isOwner && !isAlreadyShared) {
+                project.sharedTo.push(req.user._id);
+                await project.save();
+            }
+            isOk = true;
         }
         else throw new ApiError(474, "Token is invalid");
     }
     else {
-        if (project.owner != req.user._id) {
-            isOk = true
+        const isOwner = project.owner.equals(req.user._id);
+        const isShared = project.sharedTo.some(id => id.equals(req.user._id));
+        if (isOwner || isShared) {
+            isOk = true;
         }
         else throw new ApiError(475, "You are Unauthorised");
     }
+
     if (isOk) {
         const container = docker.getContainer(containerId)
         const data = await container.inspect()
