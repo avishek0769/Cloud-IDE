@@ -1,14 +1,11 @@
+import "dotenv/config"
 import express, { json, urlencoded } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import {errorHandler} from "./utils/errorHandler.js"
-import dotenv from "dotenv"
+import { errorHandler } from "./utils/errorHandler.js"
 import mongoose from "mongoose";
 
-dotenv.config({
-    path: "./.env"
-})
-
+const PORT = process.env.PORT
 const app = express()
 
 const allowedOrigins = [
@@ -37,7 +34,7 @@ app.use(cors({
 app.options("*", cors());
 app.use(json())
 app.use(cookieParser())
-app.use(urlencoded({limit: "10mb"}))
+app.use(urlencoded({ limit: "10mb" }))
 
 // All the routes
 import userRouter from "./routes/user.routes.js";
@@ -48,8 +45,8 @@ app.use("/api/v1/projects", projectRouter)
 
 app.use(errorHandler)
 
-app.listen(4000, () => {
-    console.log("Actual Server running at 4000....")
+app.listen(PORT, () => {
+    console.log(`Actual Server running at ${PORT}....`)
     // Connect DB
     mongoose.connect(process.env.MONGODB_CONNECTION_STRING).then(_ => console.log("DB connected !"))
 })
