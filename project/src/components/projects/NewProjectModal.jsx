@@ -24,7 +24,6 @@ export function NewProjectModal({ isOpen, onClose, setLoading }) {
   }, [setShowAlert, setMessage])
 
   const handleCreateProject = ({ name, description, language }) => {
-    console.log("func")
     fetch(`${domain}/projects/create`, {
       method: "POST",
       headers: {
@@ -42,7 +41,6 @@ export function NewProjectModal({ isOpen, onClose, setLoading }) {
     })
     .then(data => {
       if (data) {
-        console.log(data)
         navigate(`/playground?containerId=${data.data.containerId}`)
       }
     })
@@ -60,9 +58,9 @@ export function NewProjectModal({ isOpen, onClose, setLoading }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Project">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 font-sans">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="name" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
             Project Name
           </label>
           <input
@@ -70,13 +68,14 @@ export function NewProjectModal({ isOpen, onClose, setLoading }) {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded-md bg-black border border-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+            className="block w-full h-10 px-3.5 bg-[#08080a] border border-gray-900 hover:border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            placeholder="e.g. node-chat-app"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="description" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
             Description
           </label>
           <textarea
@@ -84,40 +83,48 @@ export function NewProjectModal({ isOpen, onClose, setLoading }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="mt-1 block w-full rounded-md bg-black border border-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-1"
+            className="block w-full px-3.5 py-2.5 bg-[#08080a] border border-gray-900 hover:border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+            placeholder="Describe what this workspace does..."
             required
           />
         </div>
 
         <div>
-          <label htmlFor="language" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="language" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
             Programming Language
           </label>
-          <select
-            id="language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="mt-1 block w-full p-2 rounded-md bg-black border border-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          >
-            {LANGUAGES.map((lang, index) => (
-              <option key={lang} value={LANG_VALUE[index]}>
-                {lang}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="block w-full h-10 px-3.5 bg-[#08080a] border border-gray-900 hover:border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+            >
+              {LANGUAGES.map((lang, index) => (
+                <option key={lang} value={LANG_VALUE[index]} className="bg-[#0c0c0f] text-white">
+                  {lang}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-gray-500">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+              </svg>
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-end space-x-3 pt-4">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-900/60 mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
+            className="h-9 px-4 text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800/40 rounded-lg transition-all"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
+            className="h-9 px-4 text-xs font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all shadow-md shadow-blue-500/10"
           >
             Create Project
           </button>

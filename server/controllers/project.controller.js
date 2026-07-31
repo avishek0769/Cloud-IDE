@@ -230,15 +230,47 @@ const editMetaData = asyncHandler(async (req, res) => {
 const deleteProject = asyncHandler(async (req, res) => {
     const { projectId } = req.params;
 
-    const project = await Project.findByIdAndDelete(projectId);
-    const tunnel = await ngrok.getListenerByUrl(project.instanceURL)
-    await tunnel.close().catch(err => console.log("Tunnel Close error --> ", err))
-
-    if (project) {
-        const container = docker.getContainer(project.containerId)
-        await container.remove()
+    const project = await Project.findById(projectId);
+    if (!project) {
+        throw new ApiError(404, "Project doesn't exist");
     }
-    else throw new ApiError(503, "Project doesn't exists")
+
+    // Try to close ngrok tunnel
+    try {
+        if (project.instanceURL) {
+            const tunnel = await ngrok.getListenerByUrl(project.instanceURL);
+            if (tunnel) {
+                await tunnel.close();
+            }
+        }
+    } catch (err) {
+        console.log("Tunnel Close error --> ", err);
+    }
+
+    // Try to stop and remove docker container
+    try {
+        if (project.containerId) {
+            const container = docker.getContainer(project.containerId);
+            if (container) {
+                await container.remove({ force: true });
+            }
+        }
+    } catch (err) {
+        console.log("Container remove error --> ", err);
+    }
+
+    // Remove project from User's projects array
+    try {
+        await User.findByIdAndUpdate(
+            req.user._id,
+            { $pull: { projects: project._id } }
+        );
+    } catch (err) {
+        console.log("Remove project from User projects list error --> ", err);
+    }
+
+    // Now delete from DB
+    await Project.findByIdAndDelete(projectId);
 
     res.status(200).json(new ApiResponse(200, { deleted: true }, "Project deleted successfully"))
 })

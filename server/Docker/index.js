@@ -1,6 +1,6 @@
 import express from "express";
 import http from "http"
-import {Server} from "socket.io"
+import { Server } from "socket.io"
 import cors from "cors"
 import { exec, spawn } from "child_process";
 import fs from "fs/promises";
@@ -51,7 +51,7 @@ app.options("*", (req, res) => {
 });
 
 chokidar.watch("./user").on("all", (event, path) => {
-    if(event == "add" || event == "addDir" || event == "unlink" || event == "unlinkDir" ) {
+    if (event == "add" || event == "addDir" || event == "unlink" || event == "unlinkDir") {
         io.emit("file:refresh", "do a refresh");
     }
 })
@@ -68,7 +68,7 @@ child.stdout.on("data", (data) => {
     outputBuffer += output;
     const match = output.match(/__CMD_END__(\w+)/);
 
-    if(match){
+    if (match) {
         console.log("Match --> ", match)
         const socketId = commandSocketMap.get(match[1])
         io.to(socketId).emit("terminal:output", outputBuffer.replace(/__CMD_END__\w+/, ""))
@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
     socketToFilePath.set(socket.id, "")
 
     socket.on("terminal:write", (data) => {
-        if(data == '\n'){
+        if (data == '\n') {
             socket.emit("terminal:output", "ubuntu@user> ")
         }
         else {
@@ -93,25 +93,25 @@ io.on("connection", (socket) => {
             child.stdin.write(`echo __CMD_END__${commandId}\n`)
         }
     })
-    socket.on("file:write", async ({content, path}) => {
+    socket.on("file:write", async ({ content, path }) => {
         console.log(socket.id, "==>", content)
         let filePath = "/user" + path
-        await fs.writeFile(filePath, content, {encoding: "utf-8"})
+        await fs.writeFile(filePath, content, { encoding: "utf-8" })
     })
     socket.on("fetch:code", async (path) => {
         let filePath = "/user" + path
-        const data = await fs.readFile(filePath, {encoding: "utf-8"})
+        const data = await fs.readFile(filePath, { encoding: "utf-8" })
         socketToFilePath.set(socket.id, filePath)
         socket.emit("fetched:code", data)
     })
-    socket.on("code:run", ({filePath, fileType}) => { // Here replace the .exe --> .out, and the ./
+    socket.on("code:run", ({ filePath, fileType }) => { // Here replace the .exe --> .out, and the ./
         console.log(filePath)
-        if(fileType == "c" || fileType == "cpp"){
+        if (fileType == "c" || fileType == "cpp") {
             let outputFilename = filePath.split("/").slice(-1)[0].split(".")[0]
-            let command = `${fileType == "c"? "gcc" : "g++"} user${filePath} -o user${filePath.split("/").slice(0, -1).join("/")}/${outputFilename}.out`
+            let command = `${fileType == "c" ? "gcc" : "g++"} user${filePath} -o user${filePath.split("/").slice(0, -1).join("/")}/${outputFilename}.out`
 
             exec(command, (err) => {
-                if(err) {
+                if (err) {
                     console.log("err --> ", err)
                     socket.emit("terminal:output", err.toString())
                     return
@@ -119,7 +119,7 @@ io.on("connection", (socket) => {
                 let command2 = `/user${filePath.split("/").slice(0, -1).join("/")}/${outputFilename}.out`
                 console.log(command2)
                 exec(command2, (err2, stdout2) => {
-                    if(err2){
+                    if (err2) {
                         console.log("err2 -->", err2)
                         socket.emit("terminal:output", err2.toString())
                         return
@@ -129,10 +129,10 @@ io.on("connection", (socket) => {
                 })
             })
         }
-        else if(fileType == "js"){
+        else if (fileType == "js") {
             let command = `node user${filePath}`
             exec(command, (err, stdout) => {
-                if(err){
+                if (err) {
                     console.log("err --> ", err.toString())
                     socket.emit("terminal:output", err)
                     return
@@ -141,11 +141,11 @@ io.on("connection", (socket) => {
             })
         }
     })
-    socket.on("cursor-change:send", ({socketId, position}) => {
+    socket.on("cursor-change:send", ({ socketId, position }) => {
         let socketsWithSameFilePath = []
         const filePath = socketToFilePath.get(socketId)
         socketToFilePath.forEach((value, key, map) => {
-            if(socketId != key && value == filePath){
+            if (socketId != key && value == filePath) {
                 socketsWithSameFilePath.push(key)
             }
         })
@@ -153,11 +153,11 @@ io.on("connection", (socket) => {
             io.to(id).emit("cursor-change:receive", position)
         })
     })
-    socket.on("text-change:send", ({socketId, data}) => {
+    socket.on("text-change:send", ({ socketId, data }) => {
         let socketsWithSameFilePath = []
         const filePath = socketToFilePath.get(socketId)
         socketToFilePath.forEach((value, key, map) => {
-            if(socketId != key && value == filePath){
+            if (socketId != key && value == filePath) {
                 socketsWithSameFilePath.push(key)
             }
         })
@@ -175,7 +175,7 @@ io.on("connection", (socket) => {
 
 app.get("/files", async (req, res) => {
     const fileTree = await generateFileTree("./user")
-    res.status(200).json({tree: fileTree})
+    res.status(200).json({ tree: fileTree })
 })
 
 app.get("/get-connected-sockets", (req, res) => {
@@ -183,20 +183,20 @@ app.get("/get-connected-sockets", (req, res) => {
     res.status(200).json(obj)
 })
 
-async function generateFileTree (directory) {
+async function generateFileTree(directory) {
     let tree = {}
 
-    async function buildTree (currentDir, currentTree) {
+    async function buildTree(currentDir, currentTree) {
         const files = await fs.readdir(currentDir);
 
         for (const file of files) {
             const filePath = path.join(currentDir, file)
             const stat = await fs.stat(filePath)
-            if(stat.isDirectory()) {
+            if (stat.isDirectory()) {
                 currentTree[file] = {}
                 await buildTree(filePath, currentTree[file])
             }
-            else{
+            else {
                 currentTree[file] = null
             }
         }

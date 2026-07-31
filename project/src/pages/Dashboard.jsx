@@ -67,11 +67,20 @@ function Dashboard() {
     })
       .then(res => {
         console.log(res.status)
-        if (res.status > 399) console.log("Error Delete");
-        else {
-          const updatedProjects = projects.filter(elem => elem._id != project._id)
-          setProjects(updatedProjects)
+        if (res.status > 399) {
+          console.log("Error Delete");
+          alert("Failed to delete project");
         }
+        else {
+          setProjects(prevProjects => prevProjects.filter(elem => elem._id !== project._id))
+        }
+      })
+      .catch(err => {
+        console.error("Delete request failed:", err);
+        alert("Failed to delete project due to network error");
+      })
+      .finally(() => {
+        setIsDeleting("")
       })
   }
 
@@ -80,7 +89,7 @@ function Dashboard() {
       {loading && <LoadingScreen message={"It may take a while..."} />}
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-black">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-transparent min-h-[calc(100vh-64px)]">
         <PageHeader title="My Projects" onNewProject={() => setIsNewProjectModalOpen(true)} />
 
         <div className="mb-6">
@@ -98,13 +107,13 @@ function Dashboard() {
             <ProjectCard
               activeTab={activeTab}
               isDeleting={isDeleting}
-              key={project.id}
+              key={project._id}
               project={project}
               onEdit={handleOnEdit}
               onDelete={handleOnDelete}
             />
           )) :
-            <h1 className='text-center text-white font-bold text-2xl'>No Projects yet</h1>
+            projects != null && <h1 className='text-center text-gray-500 font-bold text-xl col-span-full py-12'>No Projects yet</h1>
           }
         </div>
 
