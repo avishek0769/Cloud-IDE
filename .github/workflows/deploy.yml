@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/codium
+            cd /home/ubuntu/codium
             
             git stash
             git fetch origin
@@ -28,11 +28,14 @@ jobs:
 
             git stash pop
 
-            cd /home/codium/project
+            cd /home/ubuntu/codium/project
             pnpm install --frozen-lockfile
             pnpm build
 
-            cd /home/codium/server
+            cd /home/ubuntu/codium/server
             pnpm install --frozen-lockfile
 
-            pm2 restart 25 26
+            cd /home/ubuntu/codium/server/Docker
+            docker build -t ide-image:latest .
+
+            pm2 restart 7 8
